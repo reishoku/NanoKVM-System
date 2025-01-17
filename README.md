@@ -1,7 +1,7 @@
 # NanoKVM-System
 The repository contains the kvm_system source code and update packages from NanoKVM PCIe/Full/Lite.
 
-# If you want to compile kvm_system yourself, please follow the steps below: 
+## If you want to compile kvm_system yourself, please follow the steps below: 
 
 1. Clone the MaixCDK repository: `git clone https://github.com/sipeed/MaixCDK.git`
 2. Improve the Compilation Environment, refer to [here](https://github.com/sipeed/MaixCDK/tree/main/docs/doc_zh#%E5%BF%AB%E9%80%9F%E5%BC%80%E5%A7%8B)
