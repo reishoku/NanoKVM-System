@@ -1,7 +1,7 @@
 #!/bin/sh
 
 DAEMON="tailscaled"
-PIDFILE="/var/run/$DAEMON.pid"
+PIDFILE="/var/run/${DAEMON:-tailscaled}.pid"
 
 # Set the port to listen on for incoming VPN packets.
 # Remote nodes will automatically be informed about the new port number,
@@ -15,57 +15,76 @@ FLAGS=""
 # You need tailscaled at /usr/sbin to server, and tailscale at /usr/bin to operate
 # STATIC version needed. Download page at https://pkgs.tailscale.com/stable/#static
 PKG_URL_LATEST="https://pkgs.tailscale.com/stable/tailscale_latest_riscv64.tgz"
-[ ! -x /usr/sbin/$DAEMON ] &&
-    echo "/usr/sbin/$DAEMON not found, please download it from $PKG_URL_LATEST" &&
-    echo "Then unpack it, copy $DAEMON to /usr/sbin and copy tailscale to /usr/bin" &&
-    exit 1
-VERSION=$(/usr/sbin/$DAEMON --version|sed -n '1p'|xargs echo -n)
+if [ ! -x "/usr/sbin/${DAEMON}" ]; then
+  echo "/usr/sbin/${DAEMON} not found, please download it from ${PKG_URL_LATEST}"
+  echo "Then unpack it, copy ${DAEMON} to /usr/sbin and copy tailscale to /usr/bin"
+  exit 1
+fi
 
-[ -x /usr/bin/tailscale ] || echo "/usr/bin/tailscale not found, your installation of tailscale may be broken"
+VERSION=$(/usr/sbin/${DAEMON} --version|sed -n '1p'|xargs echo -n)
+if [ ! -x "/usr/bin/tailscale" ]; then
+  echo "/usr/bin/tailscale not found, your installation of tailscale may be broken"
+fi
 
 # just for those need forwarding
-[ ! -f /etc/sysctl.d/99-tailscale.conf ] &&
-    mkdir -p /etc/sysctl.d/ &&
-    echo "missing /etc/sysctl.d/99-tailscale.conf, try make it below:" &&
-    (tee /etc/sysctl.d/99-tailscale.conf <<EOF
-net.ipv4.ip_forward = 1
-net.ipv6.conf.all.forwarding = 1
-EOF
-    ) &&
-    echo "if this message repeats showing, please look at $0 if you need forwarding"
+if [ ! -f "/etc/sysctl.d/99-tailscale.conf" ]; then
+  # mkdir -p /etc/sysctl.d
+  # echo "missing /etc/sysctl.d/99-tailscale.conf, try make it below:"
+  echo "missing /etc/sysctl.d/99-tailscale.conf, configuring IP forwarding"
+  sed -i -e '/net.ipv4.ip_forward/d; /net.ipv6.conf.all.forwarding/d;' /etc/sysctl.d/99-tailscale.conf
+  echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.d/99-tailscale.conf
+  echo 'net.ipv6.conf.all.forwarding=1' >> /etc/sysctl.d/99-tailscale.conf
+  /usr/sbin/sysctl -p || true
+  echo "if this message repeats showing, please look at $0 if you need forwarding"
+fi
 
 case "$1" in
-        start)
-                if [ -f /etc/kvm/GOMEMLIMIT ]; then
-                     value=$(cat /etc/kvm/GOMEMLIMIT)
-                     export GOMEMLIMIT="${value}MiB"
-                else
-                     export GOMEMLIMIT=1024MiB
-                fi
-                
-                echo "GOMEMLIMIT set to ${GOMEMLIMIT}"
-                printf "Starting $DAEMON[$VERSION]: "
-                start-stop-daemon -S -bmq -p "$PIDFILE" -x "/usr/sbin/$DAEMON" -- \
-                    --state=/var/lib/tailscale/tailscaled.state \
-                    --socket=/var/run/tailscale/tailscaled.sock \
-                    --port=${PORT} \
-                    $FLAGS
-                [ $? = 0 ] && echo "OK" || echo "FAIL"
-                ;;
-        stop)
-                printf "Stopping $DAEMON: "
-                start-stop-daemon -K -p "$PIDFILE"
-                [ $? = 0 ]  && (echo "OK"; rm -f "$PIDFILE") || echo "FAIL"
-                printf "cleaning tailscaled: "
-                /usr/sbin/$DAEMON --cleanup &>/dev/null
-                [ $? = 0 ] && echo "OK" || echo "FAIL"
-                ;;
-        restart|reload)
-                $0 stop
-                $0 start
-                ;;
-        doc)
-                cat <<EOF
+  start)
+    export GOMEMLIMIT=1024MiB
+    if [ -f "/etc/kvm/GOMEMLIMIT" ] && [ -r "/etc/kvm/GOMEMLIMIT" ]; then
+      value=$(cat /etc/kvm/GOMEMLIMIT)
+      export GOMEMLIMIT="${value:-1024}MiB"
+    fi
+    echo "GOMEMLIMIT set to ${GOMEMLIMIT}"
+
+    # start daemon
+    printf "Starting $DAEMON[$VERSION]: "
+    start-stop-daemon -S -bmq -p "$PIDFILE" -x "/usr/sbin/$DAEMON" -- \
+      --state=/var/lib/tailscale/tailscaled.state \
+      --socket=/var/run/tailscale/tailscaled.sock \
+      --port="${PORT}" \
+      "${FLAGS}"
+
+    if [ "${?}" = 0 ]; then
+      echo "OK"
+    else
+      echo "FAIL"
+    fi
+    ;;
+  stop)
+    printf "Stopping $DAEMON: "
+    start-stop-daemon -K -p "${PIDFILE}"
+    if [ "${?}" = 0 ]; then
+      echo "OK"
+      rm -f "${PIDFILE}"
+    else
+      echo "FAIL"
+    fi
+    printf "cleaning tailscaled: "
+    /usr/sbin/"${DAEMON}" --cleanup &>/dev/null
+
+    if [ "${?}" = 0 ]; then
+      echo "OK"
+    else
+      echo "FAIL"
+    fi
+    ;;
+  restart|reload)
+    "${0}" stop
+    "${0}" start
+    ;;
+  doc)
+    cat <<EOF
 To use tailscale, you need to meet these conditions below:
   1. Both tailscale and tailscaled were installed.
   2. At least one tailscale's account were registered.
@@ -84,8 +103,8 @@ Then, follow the steps below:
 
 Added: no more action to be repeat after your device reboot.
 EOF
-                echo ""
-                cat <<EOF
+    echo ""
+    cat <<EOF
 为了正常使用 tailscale, 你需要满足以下几个条件：
   1. tailscale 和 tailscaled 这两个静态链接的二进制程序
      都已经正确安装在系统上。
@@ -104,10 +123,10 @@ EOF
 
 补充: 不需要重复上面的操作，哪怕你的设备重启过。
 EOF
-                ;;
-        *)
-                echo "Usage: $0 {start|stop|restart}"
-                exit 1
+    ;;
+  *)
+    echo "Usage: ${0} {start|stop|restart}"
+    exit 1
 esac
 
 exit 0

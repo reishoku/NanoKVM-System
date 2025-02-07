@@ -15,7 +15,7 @@ Beta_PWR_KEY_Pin=503
 Beta_RST_KEY_Pin=505
 PCIe_HDMI_RST_Pin=451
 
-init_alpha_hw(){
+init_alpha_hw() {
   devmem 0x030010D0 32 0x2  # I2C1_SCL
   devmem 0x030010DC 32 0x2  # I2C1_SDA
   devmem 0x030010D4 32 0x3  # OLED_RST
@@ -33,15 +33,15 @@ init_alpha_hw(){
 
   echo ${Alpha_OLED_RST_Pin} > /sys/class/gpio/export  # OLED_RST
   echo out > /sys/class/gpio/gpio${Alpha_OLED_RST_Pin}/direction
-  echo 1 > /sys/class/gpio/gpio${Alpha_OLED_RST_Pin}/value
+  echo   1 > /sys/class/gpio/gpio${Alpha_OLED_RST_Pin}/value
 
   echo ${Alpha_PWR_LED_Pin} > /sys/class/gpio/export   # pwr led
   echo ${Alpha_HDD_LED_Pin} > /sys/class/gpio/export   # hdd led
   echo ${Alpha_PWR_KEY_Pin} > /sys/class/gpio/export   # pwr key
   echo ${Alpha_RST_KEY_Pin} > /sys/class/gpio/export   # rst key
 
-  echo in > /sys/class/gpio/gpio${Alpha_PWR_LED_Pin}/direction     # pwr led
-  echo in > /sys/class/gpio/gpio${Alpha_HDD_LED_Pin}/direction     # hdd led
+  echo  in > /sys/class/gpio/gpio${Alpha_PWR_LED_Pin}/direction    # pwr led
+  echo  in > /sys/class/gpio/gpio${Alpha_HDD_LED_Pin}/direction    # hdd led
   echo out > /sys/class/gpio/gpio${Alpha_PWR_KEY_Pin}/direction    # pwr key
   echo out > /sys/class/gpio/gpio${Alpha_RST_KEY_Pin}/direction    # rst key
 
@@ -52,7 +52,7 @@ init_alpha_hw(){
   # rm /etc/init.d/S30wifi
 }
 
-init_beta_pcie_hw(){
+init_beta_pcie_hw() {
   devmem 0x0300103C 32 0x3  # GPIOA15
   devmem 0x03001050 32 0x3  # GPIOA22
   devmem 0x0300105C 32 0x3  # GPIOA23
@@ -74,19 +74,19 @@ init_beta_pcie_hw(){
 
   echo ${Beta_OLED_RST_Pin} > /sys/class/gpio/export  # Beta OLED_RST
   echo out > /sys/class/gpio/gpio${Beta_OLED_RST_Pin}/direction
-  echo 1 > /sys/class/gpio/gpio${Beta_OLED_RST_Pin}/value
+  echo   1 > /sys/class/gpio/gpio${Beta_OLED_RST_Pin}/value
 
-  echo ${Beta_PWR_LED_Pin} > /sys/class/gpio/export   # pwr led
-  echo ${Beta_PWR_KEY_Pin} > /sys/class/gpio/export   # pwr key
-  echo ${Beta_RST_KEY_Pin} > /sys/class/gpio/export   # rst key
+  echo ${Beta_PWR_LED_Pin}  > /sys/class/gpio/export   # pwr led
+  echo ${Beta_PWR_KEY_Pin}  > /sys/class/gpio/export   # pwr key
+  echo ${Beta_RST_KEY_Pin}  > /sys/class/gpio/export   # rst key
   echo ${PCIe_HDMI_RST_Pin} > /sys/class/gpio/export   # hdmi rst key
 
-  echo in > /sys/class/gpio/gpio${Beta_PWR_LED_Pin}/direction     # pwr led
-  echo out > /sys/class/gpio/gpio${Beta_PWR_KEY_Pin}/direction    # pwr key
-  echo out > /sys/class/gpio/gpio${Beta_RST_KEY_Pin}/direction    # rst key
+  echo  in > /sys/class/gpio/gpio${Beta_PWR_LED_Pin}/direction     # pwr led
+  echo out > /sys/class/gpio/gpio${Beta_PWR_KEY_Pin}/direction     # pwr key
+  echo out > /sys/class/gpio/gpio${Beta_RST_KEY_Pin}/direction     # rst key
   echo out > /sys/class/gpio/gpio${PCIe_HDMI_RST_Pin}/direction    # rst key
 
-  echo 1 > /sys/class/gpio/gpio${PCIe_HDMI_RST_Pin}/value    # rst key
+  echo   1 > /sys/class/gpio/gpio${PCIe_HDMI_RST_Pin}/value    # rst key
 
   rmmod /mnt/system/ko/i2c-gpio.ko
   rmmod /mnt/system/ko/i2c-algo-bit.ko
@@ -94,18 +94,13 @@ init_beta_pcie_hw(){
   insmod /mnt/system/ko/i2c-gpio.ko
 }
 
-kvm_hw_detect(){
-  if [ ! -e /etc/kvm/hdmi_version ]
-  then
+kvm_hw_detect() {
+  if [ ! -e "/etc/kvm/hdmi_version" ]; then
     rm /etc/kvm/hw
   fi
-  if [ -e /etc/kvm/hw ]
-  then
-    echo "/etc/kvm/hw exist"
-  else
+  if [ ! -e "/etc/kvm/hw" ]; then
     echo "/etc/kvm/hw not exist"
-    if [ -d "/etc/kvm/" ]
-    then
+    if [ -d "/etc/kvm/" ]; then
       echo "/etc/kvm/ exist"
     else
       mkdir /etc/kvm/
@@ -113,7 +108,7 @@ kvm_hw_detect(){
     devmem 0x0300104C 32 0x3  # GPIOA26 / WiFi_EN
     echo ${WiFi_EN_Pin} > /sys/class/gpio/export  # WiFi_EN
     echo out > /sys/class/gpio/gpio${WiFi_EN_Pin}/direction
-    echo 0 > /sys/class/gpio/gpio${WiFi_EN_Pin}/value
+    echo   0 > /sys/class/gpio/gpio${WiFi_EN_Pin}/value
 
     devmem 0x0300103C 32 0x3  # GPIOA15
     devmem 0x03001050 32 0x3  # GPIOA22
@@ -127,11 +122,10 @@ kvm_hw_detect(){
     devmem 0x030010D4 32 0x3  # OLED_RST
     echo ${Alpha_OLED_RST_Pin} > /sys/class/gpio/export  # OLED_RST
     echo out > /sys/class/gpio/gpio${Alpha_OLED_RST_Pin}/direction
-    echo 1 > /sys/class/gpio/gpio${Alpha_OLED_RST_Pin}/value
+    echo   1 > /sys/class/gpio/gpio${Alpha_OLED_RST_Pin}/value
 
     kvm_tmp=$(i2cdetect -ry 1 0x3d 0x3d | grep 3d)
-    if [ -n "$kvm_tmp" ]
-    then
+    if [ -n "${kvm_tmp}" ]; then
       # alpha hw
       echo "alpha" > /etc/kvm/hw
     else
@@ -139,7 +133,7 @@ kvm_hw_detect(){
       echo ${Alpha_OLED_RST_Pin} > /sys/class/gpio/unexport  # OLED_RST
       echo ${Beta_OLED_RST_Pin} > /sys/class/gpio/export  # Beta_OLED_RST_Pin
       echo out > /sys/class/gpio/gpio${Beta_OLED_RST_Pin}/direction
-      echo 1 > /sys/class/gpio/gpio${Beta_OLED_RST_Pin}/value
+      echo   1 > /sys/class/gpio/gpio${Beta_OLED_RST_Pin}/value
 
       rmmod /mnt/system/ko/i2c-gpio.ko
       rmmod /mnt/system/ko/i2c-algo-bit.ko
@@ -147,16 +141,14 @@ kvm_hw_detect(){
       insmod /mnt/system/ko/i2c-gpio.ko
 
       kvm_tmp=$(i2cdetect -ry 4 0x2c 0x2c | grep 2c)
-      if [ -n "$kvm_tmp" ]
-      then
+      if [ -n "${kvm_tmp}" ]; then
         echo "c" > /etc/kvm/hdmi_version
       else
         echo "u" > /etc/kvm/hdmi_version
       fi
 
       kvm_tmp=$(i2cdetect -ry 5 0x3c 0x3c | grep 3c)
-      if [ -n "$kvm_tmp" ]
-      then
+      if [ -n "$kvm_tmp" ]; then
         echo "pcie" > /etc/kvm/hw
         sync
         reboot
@@ -170,27 +162,26 @@ kvm_hw_detect(){
       echo 1 > /sys/class/gpio/gpio${WiFi_EN_Pin}/value
       echo ${WiFi_EN_Pin} > /sys/class/gpio/unexport  # WiFi_EN
     fi
+  else
+    echo "/etc/kvm/hw exist"
   fi
   sync
 }
 
-kvm_hw_init(){
-    FIND_FILE="/etc/kvm/hw"
-    if [ `grep -c "alpha" $FIND_FILE` -ne '0' ]
-    then
-        echo "hw = alpha!"
-        init_alpha_hw
+kvm_hw_init() {
+  FIND_FILE="/etc/kvm/hw"
+  if grep -q -c "alpha" $FIND_FILE; then
+    echo "hw = alpha!"
+    init_alpha_hw
+  else
+    if grep -q -c "beta" $FIND_FILE; then
+      echo "hw = beta!"
+      init_beta_pcie_hw
+    else grep -q -c "pcie" $FIND_FILE; then
+      echo "hw = pcie!"
+      init_beta_pcie_hw
     fi
-    if [ `grep -c "beta" $FIND_FILE` -ne '0' ]
-    then
-        echo "hw = beta!"
-        init_beta_pcie_hw
-    fi
-    if [ `grep -c "pcie" $FIND_FILE` -ne '0' ]
-    then
-        echo "hw = pcie!"
-        init_beta_pcie_hw
-    fi
+  fi
 }
 
 case "$1" in

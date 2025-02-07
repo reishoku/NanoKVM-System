@@ -3,14 +3,19 @@
 
 case "$1" in
   start)
-    echo -n kvm > /boot/hostname.prefix
-    cp /mnt/data/sensor_cfg.ini.LT /mnt/data/sensor_cfg.ini
+    echo -n "kvm" > "/boot/hostname.prefix"
+    cp "/mnt/data/sensor_cfg.ini.LT" "/mnt/data/sensor_cfg.ini"
 
-    str_value=$(cat /sys/class/cvi-base/base_uid | awk '{print $2}')
-    first_uint=$(echo $str_value | cut -d'_' -f1)
-    second_uint=$(echo $str_value | cut -d'_' -f2)
-    result="$first_uint$second_uint"
-    echo $result > /device_key
+    # str_value=$(cat /sys/class/cvi-base/base_uid | awk '{print $2}')
+    # first_uint=$(echo $str_value | cut -d'_' -f1)
+    # second_uint=$(echo $str_value | cut -d'_' -f2)
+    # result="$first_uint$second_uint"
+    # echo $result > /device_key
+    str_value="$(awk '{print $2}' /sys/class/cvi-base/base_uid)"
+    # first_uint="${str_value/*_/}"
+    # second_uint="${str_value/_*/}"
+    # result="${str_value/_*/}${str_value/*_/}"
+    echo "${str_value/_*/}${str_value/*_/}" > /device_key
 
     # if [ ! -e /etc/kvm/hw ]
     # then
