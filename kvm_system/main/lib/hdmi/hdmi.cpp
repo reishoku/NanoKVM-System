@@ -84,7 +84,7 @@ void lt6911_get_hdmi_errer() {
   }
   delete dat;
 
-  printf("hdmi_errer_code = %x, %x, %x, %x, %x, %x\n", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
+  printf("hdmi_error_code = %x, %x, %x, %x, %x, %x\n", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
 }
 
 uint8_t lt6911_get_hdmi_res() {
@@ -213,14 +213,39 @@ uint8_t lt6911_get_csi_res() {
     ret = 1;
   }
 
-  printf("CSI res: %d * %d\n", Hactive, Vactive);
+  // printf("CSI res: %d * %d\n", Hactive, Vactive);
   // setenv("KVM_CSI_HEIGHT", to_string(Hactive).c_str(), 1);
   // setenv("KVM_CSI_WIDTH",  to_string(Vactive).c_str(), 1);
 
-  sprintf(Cmd, "echo %d > /kvmapp/kvm/width",  Hactive);
-  system(Cmd);
-  sprintf(Cmd, "echo %d > /kvmapp/kvm/height", Vactive);
-  system(Cmd);
+  std::cout << "CSI res: " << Hactive << " * " << Vactive << std::endl;
+
+  std::fstream hactive;
+  std::fstream vactive;
+
+  try {
+    hactive.open("/kvmapp/kvm/width", std::ios_base::out | std::ios_base::trunc);
+    if (!hactive.is_open()) {
+      // error handling
+      throw std::runtime_error("Failed to open file");
+    }
+    hactive.seekg(0);
+  } catch (const std::exception& e) {
+    std::cerr << "Error: " << e.what() << endl;
+  }
+  assert(std::filesystem::exists("/kvmapp/kvm/width"))
+  hactive.close();
+
+  try {
+    vactive.open("/kvmapp/kvm/height", std::ios_base::out | std::ios_base::trunc);
+    if (!vactive.is_open()) {
+      // error handling
+      throw std::runtime_error("Failed to open file");
+    }
+  } catch (const std::exception& e) {
+    std::cerr << "Error: " << e.what() << endl;
+  }
+  assert(std::filesystem::exists("/kvmapp/kvm/height"))
+  vactive.close();
 
   delete dat0;
   delete dat1;

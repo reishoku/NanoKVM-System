@@ -16,7 +16,10 @@
 #include <pthread.h>
 #include <sys/poll.h>
 #include <fstream>
+#include <iostream>
 #include <linux/input.h>
+#include <filesystem> // C++17
+#include <cassert>
 
 #include "qr.h"
 #include "system_ctrl.h"

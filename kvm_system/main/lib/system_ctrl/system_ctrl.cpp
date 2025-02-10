@@ -7,30 +7,71 @@ extern kvm_sys_state_t kvm_sys_state;
 extern kvm_oled_state_t kvm_oled_state;
 
 void gen_hostapd_conf(char* ap_ssid) {
-  char file_data[300] = {0};
-  FILE * fp;
-    sprintf(file_data, "ctrl_interface=/var/run/hostapd\nctrl_interface_group=0\nssid=NanoKVM\nhw_mode=g\nchannel=1\nbeacon_int=100\ndtim_period=2\nmax_num_sta=255\nrts_threshold=-1\nfragm_threshold=-1\nmacaddr_acl=0\nauth_algs=3\nwpa=2\nwpa_passphrase=%s\nieee80211n=1\n", ap_ssid);
-    fp = fopen("/etc/hostapd.conf", "w");
-    fwrite(file_data, sizeof(file_data) , 1, fp );
-  fclose(fp);
+  std::fstream hostapd_conf("/etc/hostapd.conf", std::ios_base::out|std::ios_base::trunc);
+  hostapd_conf.exceptions(std::ios::failbit|std::ios::badbit);
+  try {
+    if(!hostapd_conf.is_open()) {
+      // error handling
+      throw std::runtime_error("Failed to open file");
+    }
+    hostapd_conf << "ctrl_interface" << "=" << "/var/run/hostapd" << std::endl;
+    hostapd_conf << "ctrl_interface_group" << "=" << "0" << std::endl;
+    hostapd_conf << "nsssid" << "=" << "NanoKVM" << std::endl;
+    hostapd_conf << "hw_mode" << "=" << "g" << std::endl;
+    hostapd_conf << "channel" << "=" << "1" << std::endl;
+    hostapd_conf << "beacon_int" << "=" << "100" << std::endl;
+    hostapd_conf << "dtim_period" << "=" << "2" << std::endl;
+    hostapd_conf << "max_num_sta" << "=" << "255" << std::endl;
+    hostapd_conf << "rts_threshold" << "=" << "-1" << std::endl;
+    hostapd_conf << "macaddr_acl" << "=" << "0" << std::endl;
+    hostapd_conf << "auth_algs" << "=" << "3" << std::endl;
+    hostapd_conf << "wpa" << "=" << "2" << std::endl;
+    hostapd_conf << "wpa_passphrase" << "=" << &ap_ssid << std::endl;
+    hostapd_conf << "ieee80211n" << "=" << "1" << std::endl;
+
+  } catch (const std::exception &e) {
+    std::cerr << "Error: " << e.what() << endl;
+  }
+  assert(std::filesystem::exists("/etc/hostapd.conf"))
 }
 
 void gen_udhcpd_conf() {
-  char file_data[300] = {0};
-  FILE * fp;
-    sprintf(file_data, "start 10.10.10.100\nend 10.10.10.200\ninterface wlan0\npidfile /var/run/udhcpd.wlan0.pid\nlease_file /var/lib/misc/udhcpd.wlan0.leases\noption subnet 255.255.255.0\noption lease 864000\n");
-    fp = fopen("/etc/udhcpd.wlan0.conf", "w");
-    fwrite(file_data, sizeof(file_data) , 1, fp );
-  fclose(fp);
+  std::fstream udhcpd_conf("/etc/udhcpd.wlan0.conf", std::ios_base::out|std::ios_base::trunc);
+  udhcpd_conf.exceptions(std::ios::failbit|std::ios::badbit);
+  try {
+    if(!udhcpd_conf.is_open()) {
+      // error handling
+      throw std::runtime_error("Failed to open file");
+    }
+    udhcpd_conf << "start" << " " << "10.10.10.100" << std::endl;
+    udhcpd_conf << "end" << " " << "10.10.10.200" << std::endl;
+    udhcpd_conf << "interface" << " " << "wlan0" << std::endl;
+    udhcpd_conf << "pidfile" << " " << "/var/run/udhcpd.wlan0.pid" << std::endl;
+    udhcpd_conf << "lease_file" << " " << "/var/lib/misc/udhcpd.wlan0.leases" << std::endl;
+    udhcpd_conf << "subnet" << " " << "255.255.255.0" << std::endl;
+    udhcpd_conf << "option" << " " << "lease" << " " << "864000" << std::endl;
+  } catch (const std::exception &e) {
+    std::cerr << "Error: " << e.what() << endl;
+  }
+  assert(std::filesystem::exists("/etc/udhcpd.wlan0.conf"));
 }
 
 void gen_dnsmasq_conf() {
-  char file_data[300] = {0};
-  FILE * fp;
-    sprintf(file_data, "bind-interfaces\ninterface=wlan0\ndhcp-range=10.10.10.2,10.10.10.254\naddress=/#/10.0.0.1\n");
-    fp = fopen("/etc/udhcpd.wlan0.conf", "w");
-    fwrite(file_data, sizeof(file_data) , 1, fp );
-  fclose(fp);
+  std::fstream dnsmasq_conf("/etc/udhcpd.wlan0.conf", std::ios_base::out|std::ios_base::trunc);
+  dnsmasq_conf.exceptions(std::ios::failbit|std::ios::badbit);
+  try {
+    if(!dnsmasq_conf.is_open()) {
+      // error handling
+      throw std::runtime_error("Failed to open file");
+    }
+    dnsmasq_conf << "bind-interfaces" << std::endl;
+    dnsmasq_conf << "interface" << "=" << "wlan0" << std::endl;
+    dnsmasq_conf << "dhcp-range" << "=" << "10.10.10.2,10.10.10.254" << std::endl;
+    dnsmasq_conf << "address" << "=" << "/#/10.0.0.1" << std::endl;
+  } catch (const std::exception &e) {
+    std::cerr << "Error: " << e.what() << endl;
+  }
+  assert(std::filesystem::exists("/etc/udhcpd.wlan0.conf"));
 }
 
 uint8_t sta_connect_ap(void) {

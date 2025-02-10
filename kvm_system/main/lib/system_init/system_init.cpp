@@ -7,8 +7,7 @@ using namespace maix::sys;
 extern kvm_sys_state_t kvm_sys_state;
 extern kvm_oled_state_t kvm_oled_state;
 
-void new_app_init(uint8_t safe_update)
-{
+void new_app_init(uint8_t safe_update) {
   // first start
   system("cp -f /kvmapp/system/update-nanokvm.py /etc/kvm/");
   system("rm /etc/init.d/S02udisk");
@@ -109,16 +108,44 @@ void new_app_init(uint8_t safe_update)
 }
 
 void update_resolv_conf(void) {
-  FILE *fp = NULL;
-  // fp = fopen("/boot/resolv.conf", "w+");
-  fp = fopen("/boot/resolv.conf", "w");
-  // 阿里: 223.5.5.5
-  // 腾讯: 119.29.29.29
-    fprintf(fp, "nameserver 1.1.1.1\n");
-  fclose(fp);
-  system("rm -rf /etc/resolv.conf");
-  system("cp -vf /etc/resolv.conf /etc/resolv.conf.old");
-  system("cp -vf /boot/resolv.conf /etc/resolv.conf");
+  std::fstream boot_resolvconf;
+  boot_resolvconf.exceptions(std::ios::failbit | std::ios::badbit);
+  try {
+    boot_resolvconf.open("/boot/resolv.conf", std::ios_base::out|std::ios_base::in|std::ios_base::trunc );
+    if (!boot_resolvconf.is_open()) {
+      // error handling
+      throw std::runtime_error("Failed to open file");
+    }
+    boot_resolvconf.seekg(0);
+    boot_resolvconf << "nameserver" << " " << "1.1.1.1" << std::endl;
+  } catch (const std::exception& e) {
+    std::cerr << "Error: " << e.what() << endl;
+  }
+  assert(std::filesystem::exists("/boot/resolv.conf"))
+
+  if (std::filesystem::exists("/etc/resolv.conf.old") == true) {
+    bool res = std::filesystem::remove("/etc/resolv.conf.old")
+    assert(!res);
+  }
+
+  if (std::filesystem::exists("/etc/resolv.conf") == true) {
+    boot res = std::filesystem::copy_file(
+        "/etc/resolv.conf",
+        "/etc/resolv.conf.old"
+      )
+    assert(res);
+    bool res = std::filesystem::remove("/etc/resolv.conf")
+    assert(res);
+  }
+
+  if (std::filesystem::exists("/etc/resolv.conf") == true) {
+    assert(
+      std::filesystem::copy_file(
+        "/boot/resolv.conf",
+        "/etc/resolv.conf"
+        )
+    )
+  }
 }
 
 void init_upadte(void) {
