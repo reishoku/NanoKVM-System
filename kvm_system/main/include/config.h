@@ -20,6 +20,7 @@
 #include <linux/input.h>
 #include <filesystem> // C++17
 #include <cassert>
+#include <ios>
 
 #include "qr.h"
 #include "system_ctrl.h"

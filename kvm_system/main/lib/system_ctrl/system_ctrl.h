@@ -1,6 +1,7 @@
 #ifndef SYSTEM_CTRL_H_
 #define SYSTEM_CTRL_H_
 #include "config.h"
+#include <ios>
 
 void gen_hostapd_conf(char* ap_ssid);
 void gen_udhcpd_conf();
